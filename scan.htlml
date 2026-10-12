@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR skaner</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 16px;
+      text-align: center;
+    }
+    #reader {
+      max-width: 420px;
+      margin: 16px auto;
+    }
+  </style>
+</head>
+<body>
+  <h3>📷 Abonent QR skaner</h3>
+  <p id="status">Kameraga ruxsat bering va QR-kodni ko‘rsating.</p>
+  <div id="reader"></div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    let sent = false;
+    const scanner = new Html5Qrcode("reader");
+
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      async (decodedText) => {
+        if (sent) return;
+
+        const code = decodedText.trim();
+
+        if (!/^\d{6,20}$/.test(code)) {
+          document.getElementById("status").textContent =
+            "QR-kodda abonent raqami yo‘q. Boshqa kodni skaner qiling.";
+          return;
+        }
+
+        sent = true;
+        document.getElementById("status").textContent =
+          "Abonent kodi yuborilmoqda...";
+
+        try {
+          await scanner.stop();
+          tg.sendData(code);
+        } catch (error) {
+          sent = false;
+          document.getElementById("status").textContent =
+            "Xatolik yuz berdi. Qayta urinib ko‘ring.";
+        }
+      },
+      () => {}
+    ).catch(() => {
+      document.getElementById("status").textContent =
+        "Kamera ochilmadi. HTTPS va kamera ruxsatini tekshiring.";
+    });
+  </script>
+</body>
+</html>
